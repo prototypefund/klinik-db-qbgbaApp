@@ -13,43 +13,35 @@ knitr::opts_chunk$set(
 )
 ```
 
-# qbgbaApp
+# qbgbaApp <img src='man/figures/logo.png' align="right" height="139" />
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-The goal of qbgbaApp is to ...
+The goal of qbgbaApp is the analysis of data from the yearly reports of German hospitals as published by the "Gemeinsamer Bundesausschuss" (GBA).
 
 ## Installation
 
-You can install the released version of qbgbaApp from [CRAN](https://CRAN.R-project.org) with:
+You can install the released version of qbgbaApp from [Gitlab](https://gitlab.com/klinik-db/qbgbaApp) with:
 
 ``` r
-install.packages("qbgbaApp")
+remotes::install_.packages_gitlab("qbgbaApp")
 ```
 
-## Example
+## Run it 
 
-This is a basic example which shows you how to solve a common problem:
+It a `golem`-based shiny app, therefore, you can just start it (if `shiny` is installed):
 
 ```{r example}
-library(qbgbaApp)
-## basic example code
+qbgbaApp::run_app()
+
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
 
-```{r cars}
-summary(cars)
-```
+## Funding
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/master/examples>.
+<a href='https://klinik-db.de'><img src='man/figures/BMBF_eng.png' align="left" height="139" /></a>
 
-You can also embed plots, for example:
+Sponsored through the Prototype Fund by the German Federal Ministry of Education and Research from March 2021 to August 2021.
 
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
