@@ -3,6 +3,7 @@
 export("%>%")
 export(run_app)
 import(leaflet)
+import(qbgbaExtraData)
 import(shiny)
 importFrom(dplyr,across)
 importFrom(dplyr,arrange)

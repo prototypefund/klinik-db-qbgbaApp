@@ -59,6 +59,7 @@
 #' @importFrom readxl read_excel
 #' @importFrom utils data
 #' @import leaflet
+#' @import qbgbaExtraData
 #'
 NULL
 utils::globalVariables("where")

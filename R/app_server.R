@@ -7,19 +7,15 @@
 app_server <- function( input, output, session ) {
 
     filteredData <- reactive({
-        qbgbaApp::AllHospitals[qbgbaApp::AllHospitals$year == input$year &
-                                   qbgbaApp::AllHospitals$quantityBeds >= input$rangeBeds[1] &
-                                   qbgbaApp::AllHospitals$quantityBeds <= input$rangeBeds[2], ]
+        qbgbaExtraData::AllHospitals[qbgbaExtraData::AllHospitals$year == input$year &
+                                         qbgbaExtraData::AllHospitals$quantityBeds >= input$rangeBeds[1] &
+                                         qbgbaExtraData::AllHospitals$quantityBeds <= input$rangeBeds[2], ]
     })
 
     output$map <- renderLeaflet({
 
         leaflet() %>%
-            # addTiles() %>%
             addProviderTiles(providers$CartoDB.Positron) %>%
-            # addProviderTiles(providers$Stamen.TonerLines,
-            #                  options = providerTileOptions(opacity = 0.35)) %>%
-            # addProviderTiles(providers$Stamen.TonerLabels) %>%
             setView(lat = 51.16344546735013,
                     lng = 10.447737773401668,
                     zoom = 6)
@@ -66,6 +62,8 @@ app_server <- function( input, output, session ) {
         one_clinic <- filteredData() %>%
             filter(idHospital == p$id) %>%
             select(HospitalName,
+                   ikNumber,
+                   locationNumberOverall,
                    street,
                    housenumber,
                    zip,
@@ -77,6 +75,7 @@ app_server <- function( input, output, session ) {
                    quantityCasesOutpatient)
 
         one_clinic_table <- tibble("NAMES" = c("<strong>Hospital Name</strong>",
+                                               "<strong>IK - Location",
                                                "<strong>Address</strong>",
                                                "<strong>Website</strong>",
                                                "<strong>Number of Beds</strong>",
@@ -88,6 +87,7 @@ app_server <- function( input, output, session ) {
                                                                 width = 42,
                                                                 simplify = FALSE),
                                                         paste, collapse = "<br/>"),
+                                                paste0(one_clinic %>% pull(ikNumber), " - ", one_clinic %>% pull(locationNumberOverall)),
                                                 paste0(one_clinic %>% pull(street), " ",
                                                        one_clinic %>% pull(housenumber), "<br/>",
                                                        one_clinic %>% pull(zip), " ",
