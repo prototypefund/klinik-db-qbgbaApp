@@ -1,13 +1,40 @@
 Package: qbgbaApp
 Title: Giving insight into what is happening with hospitals in Germany
-Version: 0.0.0.9000
-Authors@R: person('Ulf', 'Koether', email = 'ukoether@krt-medical.de', role = c('cre', 'aut'))
-Description: Providing example analyses for the German "Qualitaetsberichte der Krankenhaeuser" obtained from the "Gemeinsamer Bundesausschuss" (GBA).
-License: MIT + file LICENSE
+Version: 0.1.0
+Authors@R: 
+    c(person(given = "Ulf",
+             family = "Koether",
+             role = c("aut", "cre"),
+             email = "ukoether@krt-medical.de"),
+      person(given = "Project Klinik-DB",
+             role = c("cph", "fnd")))
+Description: Providing example analyses for the German "Qualitaetsberichte der 
+    Krankenhaeuser" obtained from the "Gemeinsamer Bundesausschuss" (GBA).
+License: GPL (>= 3)
 Imports: 
+    attempt,
     config (>= 0.3.1),
+    dplyr,
+    DT,
+    forcats,
+    ggplot2,
+    glue,
     golem (>= 0.3.1),
-    shiny (>= 1.6.0)
+    htmltools,
+    leaflet,
+    purrr,
+    readr,
+    shiny (>= 1.6.0),
+    stringr,
+    tibble,
+    tidyr,
+    readxl,
+    rlang,
+    tidyselect,
+    magrittr,
+    pkgload
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
+Depends: 
+    R (>= 2.10)
