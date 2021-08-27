@@ -29,12 +29,9 @@ It a `golem`-based shiny app, therefore, you can just start it (if
 
 ``` r
 qbgbaApp::run_app()
-#> Loading required package: shiny
-#> 
-#> Listening on http://127.0.0.1:7720
 ```
 
-<img src="man/figures/README-example-1.png" width="100%" />
+![Screenshot](./man/figures/Screenshot_Analyse_App_01.png)
 
 ## Funding
 
