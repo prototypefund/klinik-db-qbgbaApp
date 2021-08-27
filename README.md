@@ -31,7 +31,9 @@ It a `golem`-based shiny app, therefore, you can just start it (if
 qbgbaApp::run_app()
 ```
 
-![Screenshot](./man/figures/Screenshot_Analyse_App_01.png)
+Screenshot of the first analysis from the app:
+
+<img src="./man/figures/Screenshot_Analyse_App_01.png" style="width:50%;"/>
 
 ## Funding
 
