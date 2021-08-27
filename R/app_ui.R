@@ -6,7 +6,7 @@
 #' @noRd
 app_ui <- function(request) {
 
-  all_years <- unique(AllHospitals$year)
+  all_years <- unique(qbgbaApp::AllHospitals$year)
 
   tagList(
     # Leave this function for adding external resources
@@ -30,9 +30,9 @@ app_ui <- function(request) {
                                 selected = all_years[[1]]),
 
                     sliderInput("rangeBeds", "Hospital Beds",
-                                min(AllHospitals$quantityBeds),
-                                max(AllHospitals$quantityBeds),
-                                value = range(AllHospitals$quantityBeds), step = 1),
+                                min(qbgbaApp::AllHospitals$quantityBeds),
+                                max(qbgbaApp::AllHospitals$quantityBeds),
+                                value = range(qbgbaApp::AllHospitals$quantityBeds), step = 1),
 
                     tableOutput("details")
 

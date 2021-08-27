@@ -7,9 +7,9 @@
 app_server <- function( input, output, session ) {
 
     filteredData <- reactive({
-        AllHospitals[AllHospitals$year == input$year &
-                         AllHospitals$quantityBeds >= input$rangeBeds[1] &
-                         AllHospitals$quantityBeds <= input$rangeBeds[2], ]
+        qbgbaApp::AllHospitals[qbgbaApp::AllHospitals$year == input$year &
+                                   qbgbaApp::AllHospitals$quantityBeds >= input$rangeBeds[1] &
+                                   qbgbaApp::AllHospitals$quantityBeds <= input$rangeBeds[2], ]
     })
 
     output$map <- renderLeaflet({
