@@ -54,7 +54,6 @@ app_server <- function( input, output, session ) {
                        ))
     })
 
-
     observeEvent(input$map_shape_click, {
 
         p <- input$map_shape_click
@@ -72,7 +71,9 @@ app_server <- function( input, output, session ) {
                    quantityBeds,
                    quantityCasesFull,
                    quantityCasesPartial,
-                   quantityCasesOutpatient)
+                   quantityCasesOutpatient,
+                   lat,
+                   lon)
 
         one_clinic_table <- tibble("NAMES" = c("<strong>Hospital Name</strong>",
                                                "<strong>IK - Location",
@@ -105,7 +106,30 @@ app_server <- function( input, output, session ) {
                                       striped = TRUE,
                                       sanitize.text.function = identity)
 
+        leafletProxy("map") %>%
+            clearMarkers() %>%
+            addMarkers(lng = one_clinic$lon, lat = one_clinic$lat)
+
+
     })
+
+    # observeEvent(input$map_click,{
+    #
+    #     output$details <- NULL
+    #
+    #     leafletProxy("map") %>%
+    #         clearMarkers()
+    #
+    # })
+
+    # output$controls <- renderUI({
+    #     req(input$map_marker_click)
+    #
+    #     absolutePanel(id = "unclick", top = 100, left = 50,
+    #                   right = "auto", bottom = "auto", width = "auto", height = "auto",
+    #                   actionButton(inputId = "resetChoice", label = "Remove Selection", class = "btn-primary")
+    #     )
+    # })
 
 
     observeEvent(input$reset, {

@@ -38,10 +38,7 @@ app_ui <- function(request) {
 
       ),
 
-      #conditionalPanel()
-      # absolutePanel(bottom = 50, left = 10,
-      #               tableOutput("details"),
-      #               id = "input_control"),
+      # conditionalPanel("isNaN(input.map_shape_click)", uiOutput("unclick")),
 
       absolutePanel(bottom = 20, right = 10,
                     div(style = "display:inline-block; float:right",
