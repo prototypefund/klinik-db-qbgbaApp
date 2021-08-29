@@ -95,7 +95,8 @@ app_server <- function( input, output, session ) {
                                                        one_clinic %>% pull(city)),
                                                 ifelse(one_clinic %>% pull(URL) == "No URL available",
                                                        one_clinic %>% pull(URL),
-                                                       paste0('<a href="', one_clinic %>% pull(URL), '">', one_clinic %>% pull(URL), '</a>')),
+                                                       paste0('<a href="', one_clinic %>% pull(URL), '" target="_blank" rel="noopener noreferrer">',
+                                                              one_clinic %>% pull(URL), '</a>')),
                                                 format(as.numeric(one_clinic %>% pull(quantityBeds)), big.mark = ".", decimal.mark = ","),
                                                 format(as.numeric(one_clinic %>% pull(quantityCasesFull)), big.mark = ".", decimal.mark = ","),
                                                 format(as.numeric(one_clinic %>% pull(quantityCasesPartial)), big.mark = ".", decimal.mark = ","),
@@ -134,7 +135,10 @@ app_server <- function( input, output, session ) {
 
     observeEvent(input$reset, {
 
+        output$details <- NULL
+
         leafletProxy("map")   %>%
+            clearMarkers() %>%
             setView(lat = 51.16344546735013,
                     lng = 10.447737773401668,
                     zoom = 6)

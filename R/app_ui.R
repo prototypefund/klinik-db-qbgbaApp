@@ -12,13 +12,12 @@ app_ui <- function(request) {
     # Leave this function for adding external resources
     golem_add_external_resources(),
 
-    # Your application UI logic
-    bootstrapPage(
+    fluidPage(
 
       tags$style(type = "text/css",
                  "html, body {width:100%; height:100%}"),
 
-      leafletOutput("map", width = "100%", height = "100%"),
+      leafletOutput("map", width = "100%", height = "99vh"),
 
       absolutePanel(top = 10, right = 10,
                     id = "input_control",
@@ -40,7 +39,7 @@ app_ui <- function(request) {
 
       # conditionalPanel("isNaN(input.map_shape_click)", uiOutput("unclick")),
 
-      absolutePanel(bottom = 20, right = 10,
+      absolutePanel(bottom = 40, right = 20,
                     div(style = "display:inline-block; float:right",
                         actionButton("reset", "Reset Map",
                                      class="btn btn-sm btn-success"))
