@@ -12,39 +12,53 @@ app_ui <- function(request) {
     # Leave this function for adding external resources
     golem_add_external_resources(),
 
-    fluidPage(
+    fluidPage(theme = shinytheme("cerulean"),
 
-      tags$style(type = "text/css",
-                 "html, body {width:100%; height:100%}"),
+              # tags$style(type = "text/css",
+              #            "html, body {width:100%; height:100%}"),
 
-      leafletOutput("map", width = "100%", height = "99vh"),
+              fluidRow(
+                column(12,
+                       tabsetPanel(id="ui_tab",
+                                   tabPanel("Map",
+                                            shinycssloaders::withSpinner(leafletOutput("map", width = "100%", height = "95vh"), size = 2, color = "#0080b7"),
 
-      absolutePanel(top = 10, right = 10,
-                    id = "input_control",
-                    draggable = TRUE,
-                    width = "25%",
+                                                                         absolutePanel(top = 45, right = 20,
+                                                                                       id = "input_control",
+                                                                                       draggable = TRUE,
+                                                                                       width = "auto",
 
-                    selectInput("year", "Select Year:",
-                                choices = all_years,
-                                selected = all_years[[1]]),
+                                                                                       selectInput("year", "Select Year:",
+                                                                                                   choices = all_years,
+                                                                                                   selected = all_years[[1]]),
 
-                    sliderInput("rangeBeds", "Hospital Beds",
-                                min(qbgbaExtraData::AllHospitals$quantityBeds),
-                                max(qbgbaExtraData::AllHospitals$quantityBeds),
-                                value = range(qbgbaExtraData::AllHospitals$quantityBeds), step = 1),
+                                                                                       sliderInput("rangeBeds", "Hospital Beds",
+                                                                                                   min(qbgbaExtraData::AllHospitals$quantityBeds),
+                                                                                                   max(qbgbaExtraData::AllHospitals$quantityBeds),
+                                                                                                   value = range(qbgbaExtraData::AllHospitals$quantityBeds), step = 1),
 
-                    tableOutput("details")
+                                                                                       tableOutput("details")
 
-      ),
+                                                                         ),
 
-      # conditionalPanel("isNaN(input.map_shape_click)", uiOutput("unclick")),
+                                                                         # conditionalPanel("isNaN(input.map_shape_click)", uiOutput("unclick")),
 
-      absolutePanel(bottom = 40, right = 20,
-                    div(style = "display:inline-block; float:right",
-                        actionButton("reset", "Reset Map",
-                                     class="btn btn-sm btn-success"))
-      )
-    )
+                                                                         absolutePanel(bottom = 40, right = 20,
+                                                                                       div(style = "display:inline-block; float:right",
+                                                                                           actionButton("reset", "Reset Map",
+                                                                                                        class="btn btn-sm btn-success"))
+                                                                         )
+                                   ),
+
+                                   tabPanel("Drilling",
+                                            h1("Hallo!")
+                                            )
+                       )
+
+
+                       )
+                )
+              )
   )
 }
 

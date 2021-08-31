@@ -24,6 +24,7 @@ usethis::use_package("dplyr")
 usethis::use_package("stringr")
 usethis::use_package("forcats")
 usethis::use_package("leaflet")
+usethis::use_package("shinythemes")
 
 
 ## Add modules ----
