@@ -58,7 +58,7 @@ app_ui <- function(request) {
             shinycssloaders::withSpinner(leafletOutput("map", width = "100%", height = "90vh"), size = 2, color = "#0080b7"),
 
             absolutePanel(top = 80, right = 20,
-                          id = "input_control",
+                          #id = "input_control",
                           draggable = TRUE,
                           width = "auto",
 
@@ -82,7 +82,7 @@ app_ui <- function(request) {
             absolutePanel(bottom = 80, right = 80,
                           div(style = "display:inline-block; float:left",
                               actionButton("reset", "Reset Map",
-                                           class = "btn-secondary"))
+                                           class = "btn-success"))
             )
           ),
           tabItem(
