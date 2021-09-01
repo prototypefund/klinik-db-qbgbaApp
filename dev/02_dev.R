@@ -25,7 +25,12 @@ usethis::use_package("stringr")
 usethis::use_package("forcats")
 usethis::use_package("leaflet")
 usethis::use_package("shinythemes")
-
+usethis::use_package("shinyFeedback")
+usethis::use_package("bs4Dash")
+usethis::use_package("shinyjs")
+usethis::use_package("leafdown")
+usethis::use_package("echarts4r")
+usethis::use_package("RColorBrewer")
 
 ## Add modules ----
 ## Create a module infrastructure in R/

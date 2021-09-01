@@ -34,7 +34,13 @@ Imports:
     magrittr,
     pkgload,
     qbgbaExtraData,
-    shinythemes
+    shinythemes,
+    shinyFeedback,
+    bs4Dash,
+    shinyjs,
+    leafdown,
+    echarts4r,
+    RColorBrewer
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1

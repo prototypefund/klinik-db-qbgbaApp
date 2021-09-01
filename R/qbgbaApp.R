@@ -58,8 +58,8 @@
 #' @importFrom readxl excel_sheets
 #' @importFrom readxl read_excel
 #' @importFrom utils data
-#' @importFrom shinythemes shinytheme
 #' @import leaflet
+#' @import bs4Dash
 #' @import qbgbaExtraData
 #'
 NULL

@@ -7,9 +7,18 @@
 app_server <- function( input, output, session ) {
 
     filteredData <- reactive({
-        qbgbaExtraData::AllHospitals[qbgbaExtraData::AllHospitals$year == input$year &
-                                         qbgbaExtraData::AllHospitals$quantityBeds >= input$rangeBeds[1] &
-                                         qbgbaExtraData::AllHospitals$quantityBeds <= input$rangeBeds[2], ]
+
+        AllHospitals_filtered <- qbgbaExtraData::AllHospitals[qbgbaExtraData::AllHospitals$year == input$year &
+                                                                  qbgbaExtraData::AllHospitals$quantityBeds >= input$rangeBeds[1] &
+                                                                  qbgbaExtraData::AllHospitals$quantityBeds <= input$rangeBeds[2], ]
+
+        validate(
+            need(nrow(AllHospitals_filtered) > 0, message = "No Hospitals available - please select a wider range!")#,
+            #shinyFeedback::feedbackWarning("rangeBeds", nrow(AllHospitals_filtered) == 0, "No Hospitals available - please select a wider range!")
+        )
+
+        AllHospitals_filtered
+
     })
 
     output$map <- renderLeaflet({
