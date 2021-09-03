@@ -58,8 +58,11 @@
 #' @importFrom readxl excel_sheets
 #' @importFrom readxl read_excel
 #' @importFrom utils data
+#' @import sf
 #' @import leaflet
+#' @import leafdown
 #' @import bs4Dash
+#' @import echarts4r
 #' @import qbgbaExtraData
 #'
 NULL
