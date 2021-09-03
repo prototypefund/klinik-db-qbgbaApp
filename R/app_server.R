@@ -206,72 +206,35 @@ app_server <- function( input, output, session ) {
 
     # Leafdown Part -----------------------------------------------------------
 
-    # library(tidyverse)
-    # library(sf)
+    library(tidyverse)
+    library(sf)
 
-    mapBRDStates <- qbgbaExtraData::mapBRDStates %>%
-        mutate(ID = 1:n())
-
-    df_tmp <- mapBRDStates
-    st_geometry(df_tmp) <- NULL
-
-    df_tmp <- df_tmp %>%
-        rename("Residents_gender" = Residents) %>%
-        group_by(year, AGS_1) %>%
-        mutate(Residents = sum(Residents_gender)) %>%
-        select(ID, year, AGS_1, GEN_1, BEZ_1, Residents, everything()) %>%
-        select(-Residents_gender, -gender) %>%
-        distinct(year, AGS_1, GEN_1, BEZ_1, Residents, .keep_all = TRUE) %>%
-        left_join(mapBRDStates %>% select(ID), by = "ID")
-
-    mapBRDStates <- st_as_sf(df_tmp, sf_column_name = "geometry", crs = 4326)
-
-    mapBRDStates <- mapBRDStates %>%
-        ungroup() %>%
-        select(-ID)
+    mapBRDStates <- qbgbaExtraData::mapBRDStates
 
     mapBRDStates_map <- mapBRDStates %>%
-        filter(year == 2019) %>%
+        filter(year == "2019") %>%
         select(AGS_1, GEN_1, BEZ_1)
     mapBRDStates_map <- as_Spatial(mapBRDStates_map)
 
     mapBRDStates_metadata <- mapBRDStates %>%
+        rename("ID" = AGS_1) %>%
         select(-GEN_1, -BEZ_1)
     st_geometry(mapBRDStates_metadata) <- NULL
 
-    rm(df_tmp, mapBRDStates)
-
-
-    mapBRDCounties <- qbgbaExtraData::mapBRDCounties %>%
-        mutate(ID = 1:n())
-
-    df_tmp <- mapBRDCounties
-    st_geometry(df_tmp) <- NULL
-
-    df_tmp <- df_tmp %>%
-        rename("Residents_gender" = Residents) %>%
-        group_by(year, AGS_2) %>%
-        mutate(Residents = sum(Residents_gender)) %>%
-        select(ID, year, AGS_1, GEN_1, BEZ_1, AGS_2, GEN_2, BEZ_2, Residents, everything()) %>%
-        select(-Residents_gender, -gender) %>%
-        distinct(year, AGS_1, GEN_1, BEZ_1, AGS_2, GEN_2, BEZ_2, Residents, .keep_all = TRUE) %>%
-        left_join(mapBRDCounties %>% select(ID), by = "ID")
-
-    mapBRDCounties <- st_as_sf(df_tmp, sf_column_name = "geometry", crs = 4326)
-
-    mapBRDCounties <- mapBRDCounties %>%
-        ungroup() %>%
-        select(-ID)
+    mapBRDCounties <- qbgbaExtraData::mapBRDCounties
 
     mapBRDCounties_map <- mapBRDCounties %>%
-        filter(year == 2019) %>%
+        filter(year == "2019") %>%
         select(AGS_1, GEN_1, BEZ_1, AGS_2, GEN_2, BEZ_2)
     mapBRDCounties_map <- as_Spatial(mapBRDCounties_map)
 
     mapBRDCounties_metadata <- mapBRDCounties %>%
+        rename("ID" = AGS_2) %>%
         select(-AGS_1, -GEN_1, -BEZ_1, -GEN_2, -BEZ_2)
     st_geometry(mapBRDCounties_metadata) <- NULL
 
+
+    rm(mapBRDStates, mapBRDCounties)
 
     spdfs_list <- list(mapBRDStates_map, mapBRDCounties_map)
 
@@ -306,17 +269,27 @@ app_server <- function( input, output, session ) {
         # fetch the current metadata from the leafdown object
         data <- my_leafdown$curr_data
 
+        message(data, "\n", names(data))
+
         if(my_leafdown$curr_map_level == 2) {
 
-            mapBRDCounties_metadata <- mapBRDCounties_metadata[mapBRDCounties_metadata$year == "2019", , drop = FALSE]
-            mapBRDCounties_metadata$year <- NULL
-            data <- left_join(data, mapBRDCounties_metadata , by = "AGS_2")
+            mapBRDCounties_metadata_current <- mapBRDCounties_metadata %>%
+                filter(year == input$yearDown) %>%
+                select(-year)
+
+            data <- left_join(data, mapBRDCounties_metadata_current, by = c("AGS_2" = "ID"))
+
+            # message(data)
 
         } else {
 
-            mapBRDStates_metadata <- mapBRDStates_metadata[mapBRDStates_metadata$year == "2019", , drop = FALSE]
-            mapBRDStates_metadata$year <- NULL
-            data <- left_join(data, mapBRDStates_metadata, by = "AGS_1")
+            mapBRDStates_metadata_current <- mapBRDStates_metadata %>%
+                filter(year == input$yearDown) %>%
+                select(-year)
+
+            data <- left_join(data, mapBRDStates_metadata_current, by = c("AGS_1" = "ID"))
+
+            # message(data)
 
         }
 
