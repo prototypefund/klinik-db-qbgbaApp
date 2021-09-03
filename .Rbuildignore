@@ -8,7 +8,7 @@ $run_dev.*
 ^LICENSE\.md$
 ^README\.Rmd$
 
-playground.R
+mapping.R
 ^app\.R$
 ^rsconnect$
 ^Dockerfile$

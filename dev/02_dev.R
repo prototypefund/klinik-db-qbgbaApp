@@ -24,6 +24,17 @@ usethis::use_package("dplyr")
 usethis::use_package("stringr")
 usethis::use_package("forcats")
 usethis::use_package("leaflet")
+usethis::use_package("shinythemes")
+usethis::use_package("shinyFeedback")
+usethis::use_package("bs4Dash")
+usethis::use_package("shinyjs")
+usethis::use_package("leafdown")
+usethis::use_package("echarts4r")
+usethis::use_package("RColorBrewer")
+usethis::use_package("shinyWidgets")
+usethis::use_package("forcats")
+usethis::use_package("sf")
+
 
 
 ## Add modules ----
@@ -104,4 +115,5 @@ golem::add_css_file("custom.css")
 # You're now set! ----
 # go to dev/03_deploy.R
 rstudioapi::navigateToFile("dev/03_deploy.R")
+
 
