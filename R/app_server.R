@@ -209,29 +209,10 @@ app_server <- function( input, output, session ) {
     # library(tidyverse)
     # library(sf)
 
-    mapBRDStates <- qbgbaExtraData::mapBRDStates %>%
-        mutate(ID = 1:n())
-
-    df_tmp <- mapBRDStates
-    st_geometry(df_tmp) <- NULL
-
-    df_tmp <- df_tmp %>%
-        rename("Residents_gender" = Residents) %>%
-        group_by(year, AGS_1) %>%
-        mutate(Residents = sum(Residents_gender)) %>%
-        select(ID, year, AGS_1, GEN_1, BEZ_1, Residents, everything()) %>%
-        select(-Residents_gender, -gender) %>%
-        distinct(year, AGS_1, GEN_1, BEZ_1, Residents, .keep_all = TRUE) %>%
-        left_join(mapBRDStates %>% select(ID), by = "ID")
-
-    mapBRDStates <- st_as_sf(df_tmp, sf_column_name = "geometry", crs = 4326)
-
-    mapBRDStates <- mapBRDStates %>%
-        ungroup() %>%
-        select(-ID)
+    mapBRDStates <- qbgbaExtraData::mapBRDStates
 
     mapBRDStates_map <- mapBRDStates %>%
-        filter(year == 2019) %>%
+        filter(year == "2019") %>%
         select(AGS_1, GEN_1, BEZ_1)
     mapBRDStates_map <- as_Spatial(mapBRDStates_map)
 
@@ -239,32 +220,10 @@ app_server <- function( input, output, session ) {
         select(-GEN_1, -BEZ_1)
     st_geometry(mapBRDStates_metadata) <- NULL
 
-    rm(df_tmp, mapBRDStates)
-
-
-    mapBRDCounties <- qbgbaExtraData::mapBRDCounties %>%
-        mutate(ID = 1:n())
-
-    df_tmp <- mapBRDCounties
-    st_geometry(df_tmp) <- NULL
-
-    df_tmp <- df_tmp %>%
-        rename("Residents_gender" = Residents) %>%
-        group_by(year, AGS_2) %>%
-        mutate(Residents = sum(Residents_gender)) %>%
-        select(ID, year, AGS_1, GEN_1, BEZ_1, AGS_2, GEN_2, BEZ_2, Residents, everything()) %>%
-        select(-Residents_gender, -gender) %>%
-        distinct(year, AGS_1, GEN_1, BEZ_1, AGS_2, GEN_2, BEZ_2, Residents, .keep_all = TRUE) %>%
-        left_join(mapBRDCounties %>% select(ID), by = "ID")
-
-    mapBRDCounties <- st_as_sf(df_tmp, sf_column_name = "geometry", crs = 4326)
-
-    mapBRDCounties <- mapBRDCounties %>%
-        ungroup() %>%
-        select(-ID)
+    mapBRDCounties <- qbgbaExtraData::mapBRDCounties
 
     mapBRDCounties_map <- mapBRDCounties %>%
-        filter(year == 2019) %>%
+        filter(year == "2019") %>%
         select(AGS_1, GEN_1, BEZ_1, AGS_2, GEN_2, BEZ_2)
     mapBRDCounties_map <- as_Spatial(mapBRDCounties_map)
 
@@ -272,6 +231,8 @@ app_server <- function( input, output, session ) {
         select(-AGS_1, -GEN_1, -BEZ_1, -GEN_2, -BEZ_2)
     st_geometry(mapBRDCounties_metadata) <- NULL
 
+
+    rm(mapBRDStates, mapBRDCounties)
 
     spdfs_list <- list(mapBRDStates_map, mapBRDCounties_map)
 
@@ -304,19 +265,33 @@ app_server <- function( input, output, session ) {
         req(rv$update_leafdown)
 
         # fetch the current metadata from the leafdown object
-        data <- my_leafdown$curr_data
+        current_data <- my_leafdown$curr_data
 
         if(my_leafdown$curr_map_level == 2) {
 
-            mapBRDCounties_metadata <- mapBRDCounties_metadata[mapBRDCounties_metadata$year == "2019", , drop = FALSE]
-            mapBRDCounties_metadata$year <- NULL
-            data <- left_join(data, mapBRDCounties_metadata , by = "AGS_2")
+            current_data <- current_data %>%
+                select(AGS_1, GEN_1, BEZ_1, AGS_2, GEN_2, BEZ_2)
+
+            mapBRDCounties_metadata_current <- mapBRDCounties_metadata %>%
+                filter(year == input$yearDown) %>%
+                select(-year)
+
+            data <- left_join(current_data, mapBRDCounties_metadata_current, by = "AGS_2")
 
         } else {
 
-            mapBRDStates_metadata <- mapBRDStates_metadata[mapBRDStates_metadata$year == "2019", , drop = FALSE]
-            mapBRDStates_metadata$year <- NULL
-            data <- left_join(data, mapBRDStates_metadata, by = "AGS_1")
+            current_data <- current_data %>%
+                select(AGS_1, GEN_1, BEZ_1)
+
+            # message("current_data:\n", paste0(names(current_data), collapse = ", "), "\n")
+            # message("current_data:\n", current_data, "\n")
+            # message("\nJahr: ", input$yearDown, ", Typ: ", typeof(input$yearDown), "\n")
+
+            mapBRDStates_metadata_current <- mapBRDStates_metadata %>%
+                filter(year == input$yearDown) %>%
+                select(-year)
+
+            data <- left_join(current_data, mapBRDStates_metadata_current, by = "AGS_1")
 
         }
 
@@ -333,11 +308,12 @@ app_server <- function( input, output, session ) {
     create_labels <- function(data, map_level, role, resident_baseline) {
 
         labels <- sprintf(
-            "<strong>%s</strong><br/>%s %s per %s residents</sup>",
+            "<strong>%s</strong><br/>%s %s per %s residents in %s</sup>",
             data[, paste0("GEN_", map_level)],
             prettyNum(round(data$y, digits = 1), big.mark = ","),
             rep(role, times = nrow(data)),
-            rep(paste0(as.character(resident_baseline/1000), "K"), times = nrow(data))
+            rep(paste0(as.character(resident_baseline/1000), "K"), times = nrow(data)),
+            rep(input$yearDown, times = nrow(data))
         )
 
         labels %>% lapply(htmltools::HTML)
@@ -366,49 +342,54 @@ app_server <- function( input, output, session ) {
         # depending on the selected KPI in the dropdown we show different data
         if (input$map_sel == "DoctorsSum") {
 
-            data$y <- data$DoctorsSum / data$Residents * resident_baseline
+            data <- data %>%
+                mutate(y = DoctorsSum / (male + female) * resident_baseline)
             labels <- create_labels(data, curr_map_level, "Doctors", resident_baseline)
             fillcolor <- leaflet::colorNumeric("Greens", data$y)
-            legend_title <- paste0("Number of Doctors per ", resident_baseline/1000, "K Residents")
+            legend_title <- paste0("Number of Doctors per<br/>", resident_baseline/1000, "Kresidents in ", input$yearDown)
 
         } else if (input$map_sel == "AttendingDoctorsSum") {
 
-            data$y <- data$AttendingDoctorsSum / data$Residents * resident_baseline
+            data <- data %>%
+                mutate(y = AttendingDoctorsSum / (male + female) * resident_baseline)
             labels <- create_labels(data, curr_map_level, "Attending Doctors", resident_baseline)
             fillcolor <- leaflet::colorNumeric("Reds", data$y)
-            legend_title <- paste0("Number of Attending Doctors per ", resident_baseline/1000, "K Resident")
+            legend_title <- paste0("Number of Attending Doctors per<br/>", resident_baseline/1000, "K residents in ", input$yearDown)
 
         } else if (input$map_sel == "NursesSum") {
 
-            data$y <- data$NursesSum / data$Residents * resident_baseline
+            data <- data %>%
+                mutate(y = NursesSum / (male + female) * resident_baseline)
             labels <- create_labels(data, curr_map_level, "Nurses", resident_baseline)
             fillcolor <- leaflet::colorNumeric("Blues", data$y)
-            legend_title <- paste0("Number of Nurses per ", resident_baseline/1000, "K Residents")
+            legend_title <- paste0("Number of Nurses per<br/>", resident_baseline/1000, "K residents in ", input$yearDown)
 
         } else if (input$map_sel == "quantityBedsSum") {
 
-            data$y <- data$quantityBedsSum / data$Residents * resident_baseline
+            data <- data %>%
+                mutate(y = quantityBedsSum / (male + female) * resident_baseline)
             labels <- create_labels(data, curr_map_level, "Beds", resident_baseline)
             fillcolor <- leaflet::colorNumeric("Oranges", data$y)
-            legend_title <- paste0("Number of Beds per ", resident_baseline/1000, "K Residents")
+            legend_title <- paste0("Number of Beds per<br/>", resident_baseline/1000, "K residents in ", input$yearDown)
 
         } else if (input$map_sel == "quantityCasesFullSum") {
 
-            data$y <- data$quantityCasesFullSum / data$Residents * resident_baseline
+            data <- data %>%
+                mutate(y = quantityCasesFullSum / (male + female) * resident_baseline)
             labels <- create_labels(data, curr_map_level, "Inpatient Cases", resident_baseline)
             fillcolor <- leaflet::colorNumeric("BuPu", data$y)
-            legend_title <- paste0("Number of Inpatient Cases per ", resident_baseline/1000, "K Residents")
+            legend_title <- paste0("Number of Inpatient Cases per<br/>", resident_baseline/1000, "K residents in ", input$yearDown)
 
         } else if (input$map_sel == "quantityCasesOutpatientSum") {
 
-            data$y <- data$quantityCasesOutpatientSum / data$Residents * resident_baseline
+            data <- data %>%
+                mutate(y = quantityCasesOutpatientSum / (male + female) * resident_baseline)
             labels <- create_labels(data, curr_map_level, "Outpatient Cases", resident_baseline)
             fillcolor <- leaflet::colorNumeric("Purples", data$y)
-            legend_title <- paste0("Number of Outpatient Cases per ", resident_baseline/1000, "K Residents")
+            legend_title <- paste0("Number of Outpatient Cases per<br/>", resident_baseline/1000, "K residents in ", input$yearDown)
 
         }
 
-        # labels <- create_labels(data, my_leafdown$curr_map_level)
 
         # draw the leafdown object
         my_leafdown$draw_leafdown(

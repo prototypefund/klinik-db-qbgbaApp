@@ -64,6 +64,7 @@
 #' @import bs4Dash
 #' @import echarts4r
 #' @import qbgbaExtraData
+#' @importFrom magrittr %>%
 #'
 NULL
 utils::globalVariables("where")
