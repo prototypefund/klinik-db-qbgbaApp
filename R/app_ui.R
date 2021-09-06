@@ -151,13 +151,15 @@ app_ui <- function(request) {
                                               "Number of Outpatient Cases" = "quantityCasesOutpatientSum"))
                                 )
                          )
+                       ),
+                     fluidRow(
+                       box(
+                         title = "Results",
+                         width = 12,
+                         echarts4rOutput("comparison")
                        )
-                     ),
-                     # box(
-                     #   title = "Results",
-                     #   width = 12,
-                     #   echarts4rOutput("comparison")
-                     #   )
+                     )
+                    )
                     )
                   )
                 )

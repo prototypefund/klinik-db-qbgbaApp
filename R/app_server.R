@@ -407,39 +407,102 @@ app_server <- function( input, output, session ) {
                       position = "bottomleft")
     })
 
-    # output$comparison <- renderEcharts4r({
-    #
-    #     # get the currently selected data from the map
-    #     df <- my_leafdown$curr_sel_data()
-    #
-    #     # check whether any shape is selected, show general election-result if nothing is selected
-    #     if(dim(df)[1] > 0){
-    #         if(my_leafdown$curr_map_level == 1) {
-    #             df <- df[, c("state_abbr", "Democrats2016", "Republicans2016", "Libertarians2016", "Green2016")]
-    #             df <- df %>% pivot_longer(2:5, "party") %>% group_by(party)
-    #         } else {
-    #             df <- df[, c("County", "Democrats2016", "Republicans2016", "Libertarians2016", "Green2016")]
-    #             df <- df %>% pivot_longer(2:5, "party") %>% group_by(party)
-    #             df$value <- df$value
-    #             names(df)[1] <- "state_abbr"
-    #         }
-    #     } else {
-    #         # show general election-result as no state is selected
-    #         df <- data.frame(
-    #             party = c("Democrats2016", "Republicans2016", "Libertarians2016", "Green2016"),
-    #             state_abbr = "USA",
-    #             value = c(0.153, 0.634, 0.134, 0.059)) %>% group_by(party)
-    #     }
-    #     # create the graph
-    #     df %>%
-    #         e_charts(state_abbr, stack="grp") %>%
-    #         e_bar(value) %>%
-    #         e_y_axis(formatter = e_axis_formatter("percent", digits = 2)) %>%
-    #         e_tooltip(trigger = "axis",axisPointer = list(type = "shadow")) %>%
-    #         e_legend(right = 10,top = 10) %>%
-    #         e_color(c("#232066", "#E91D0E", "#f3b300", "#006900"))%>%
-    #         e_tooltip(formatter = e_tooltip_item_formatter("percent", digits = 2))
-    # })
+    output$comparison <- renderEcharts4r({
+
+        # get the currently selected data from the map
+        df <- my_leafdown$curr_sel_data()
+
+        # check whether any shape is selected, show general election-result if nothing is selected
+        if(dim(df)[1] > 0){
+
+            if(my_leafdown$curr_map_level == 1) {
+
+                df <- df[, c("state_abbr", "Democrats2016", "Republicans2016", "Libertarians2016", "Green2016")]
+                df <- df %>% pivot_longer(2:5, "party") %>% group_by(party)
+
+            } else {
+
+                df <- df[, c("County", "Democrats2016", "Republicans2016", "Libertarians2016", "Green2016")]
+                df <- df %>% pivot_longer(2:5, "party") %>% group_by(party)
+                df$value <- df$value
+                names(df)[1] <- "state_abbr"
+
+            }
+
+        } else {
+
+            # show general election-result as no state is selected
+            df <- mapBRDStates_metadata %>%
+                group_by(year) %>%
+                summarize(across(contains("male"), sum, .names = "sum_{.col}"),
+                          numberHospitalsSum = sum(numberHospitals),
+                          across(typeRatioPrivat:psychiatricDutyToSupplyRatio, mean, .names = "mean_{.col}"),
+                          across(quantityBedsSum:NursesSum, sum, .names = "sum_{.col}"),
+                          across(weeklyWH_doctors_mean:weeklyWH_nurses_mean, mean, .names = "mean_{.col}"))
+
+            if (input$map_sel == "DoctorsSum") {
+
+                df <- df %>%
+                    select(year, sum_male, sum_female, sum_DoctorsSum) %>%
+                    group_by(year) %>%
+                    mutate(residents = sum_male + sum_female)
+                df$DV <- df[[4]] / df$residents * resident_baseline
+
+            } else if (input$map_sel == "AttendingDoctorsSum") {
+
+                df <- df %>%
+                    select(year, sum_male, sum_female, sum_AttendingDoctorsSum) %>%
+                    group_by(year) %>%
+                    mutate(residents = sum_male + sum_female)
+                df$DV <- df[[4]] / df$residents * resident_baseline
+
+            } else if (input$map_sel == "NursesSum") {
+
+                df <- df %>%
+                    select(year, sum_male, sum_female, sum_NursesSum) %>%
+                    group_by(year) %>%
+                    mutate(residents = sum_male + sum_female)
+                df$DV <- df[[4]] / df$residents * resident_baseline
+
+            } else if (input$map_sel == "quantityBedsSum") {
+
+                df <- df %>%
+                    select(year, sum_male, sum_female, sum_quantityBedsSum) %>%
+                    group_by(year) %>%
+                    mutate(residents = sum_male + sum_female)
+                df$DV <- df[[4]] / df$residents * resident_baseline
+
+            } else if (input$map_sel == "quantityCasesFullSum") {
+
+                df <- df %>%
+                    select(year, sum_male, sum_female, sum_quantityCasesFullSum) %>%
+                    group_by(year) %>%
+                    mutate(residents = sum_male + sum_female)
+                df$DV <- df[[4]] / df$residents * resident_baseline
+
+            } else if (input$map_sel == "quantityCasesOutpatientSum") {
+
+                df <- df %>%
+                    select(year, sum_male, sum_female, sum_quantityCasesOutpatientSum) %>%
+                    group_by(year) %>%
+                    mutate(residents = sum_male + sum_female)
+                df$DV <- df[[4]] / df$residents * resident_baseline
+
+            }
+
+            #df
+
+        }
+        # create the graph
+        df %>%
+            e_charts(year, stack = "grp") %>%
+            e_bar(DV) %>%
+            #e_y_axis(formatter = e_axis_formatter("percent", digits = 2)) %>%
+            e_tooltip(trigger = "axis",axisPointer = list(type = "shadow")) %>%
+            e_legend(right = 10,top = 10) %>%
+            e_color(c('#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00')) #%>%
+            #e_tooltip(formatter = e_tooltip_item_formatter("percent", digits = 2))
+    })
 
 
 
