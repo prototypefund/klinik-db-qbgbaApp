@@ -8,7 +8,7 @@ app_ui <- function(request) {
 
   all_years <- unique(qbgbaExtraData::AllHospitals$year)
 
-  all_years_down <- unique(qbgbaExtraData::mapBRDCounties$year)
+  all_years_down <- as.numeric(rev(unique(qbgbaExtraData::mapBRDCounties$year)))
 
   tagList(
     # Leave this function for adding external resources
@@ -45,7 +45,7 @@ app_ui <- function(request) {
             icon = icon("map-marked-alt")
           ),
           menuItem(
-            "Hospital KPIs for 2019",
+            "Analyzing Hospital KPIs",
             tabName = "drilling",
             icon = icon("layer-group")
           )
@@ -108,10 +108,10 @@ app_ui <- function(request) {
             tags$head(
               tags$style(HTML(".leaflet-container { background: #fff;}")),
               # workaround for the NA in leaflet legend see https://github.com/rstudio/leaflet/issues/615
-              # tags$style(HTML(".leaflet-control div:last-child {clear: both;}")),
-              # tags$style(HTML(".card {height: 100%;}")),
-              # tags$style(HTML(".col-sm-12:last-child .card {margin-bottom: 0 !important;}")),
-              # tags$style(HTML("#leafdown {height: 80% !important; margin-top: 10px; margin-bottom: 10px;}"))
+              tags$style(HTML(".leaflet-control div:last-child {clear: both;}")),
+              #tags$style(HTML(".card {height: 100%;}")),
+              tags$style(HTML(".col-sm-12:last-child .card {margin-bottom: 0 !important;}")),
+              #tags$style(HTML("#leafdown {height: 80% !important; margin-top: 10px; margin-bottom: 10px;}"))
             ),
 
             shinyjs::useShinyjs(),
@@ -135,11 +135,13 @@ app_ui <- function(request) {
                        title = "Controls",
                        width = 12,
                        fluidRow(
-                         column(width = 12,
+                         column(width = 4,
                                 # a dropdown to select what KPI should be displayed on the map
                                 selectInput("yearDown", "Select Year:",
-                                            choices = rev(all_years_down),
-                                            selected = rev(all_years_down)[[1]]),
+                                            choices = all_years_down,
+                                            selected = all_years_down[[1]])
+                                ),
+                         column(width = 8,
                                 selectInput("map_sel", "Select what KPI to display on the map:",
                                             c("Number of Doctors" = "DoctorsSum",
                                               "Number of Attending Doctors" = "AttendingDoctorsSum",
@@ -147,9 +149,10 @@ app_ui <- function(request) {
                                               "Number of Beds" = "quantityBedsSum",
                                               "Number of Inpatient Cases" = "quantityCasesFullSum",
                                               "Number of Outpatient Cases" = "quantityCasesOutpatientSum"))
-                                ),
-
-                         )),
+                                )
+                         )
+                       )
+                     ),
                      # box(
                      #   title = "Results",
                      #   width = 12,
@@ -161,7 +164,6 @@ app_ui <- function(request) {
               )
             )
           )
-        )
 }
 
 #' Add external Resources to the Application
