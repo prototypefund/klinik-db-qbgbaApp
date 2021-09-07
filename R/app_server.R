@@ -48,10 +48,15 @@ app_server <- function( input, output, session ) {
                                                  "m")))
 
     pal <- colorFactor(
-        palette = c('blue', 'red', 'green'),
+        palette = c('#007bff', '#dc3545', '#28a745'),
         levels = unique(as.character(AllHospitals$type))
         )
 
+
+    updateSelectizeInput(session, 'searchHospital',
+                         choices = unique(AllHospitals$HospitalName),
+                         selected = NULL,
+                         server = TRUE)
 
     filteredData <- reactive({
 
@@ -115,7 +120,9 @@ app_server <- function( input, output, session ) {
 
         p <- input$map_shape_click
 
-        one_clinic <- filteredData() %>%
+        data <- filteredData()
+
+        one_clinic <- data %>%
             filter(idHospital == p$id) %>%
             select(HospitalName,
                    ikNumber,
@@ -170,6 +177,12 @@ app_server <- function( input, output, session ) {
             addMarkers(lng = one_clinic$lon, lat = one_clinic$lat)
 
 
+        selected <- unname(unlist(data[data$idHospital == p$id, "HospitalName"]))
+
+        updateSelectInput(session, "searchHospital",
+                          selected = selected)
+
+
     })
 
     # observeEvent(input$map_click,{
@@ -200,6 +213,9 @@ app_server <- function( input, output, session ) {
             setView(lat = 51.16344546735013,
                     lng = 10.447737773401668,
                     zoom = 6)
+
+        updateSelectizeInput(session, "searchHospital",
+                          selected = "")
 
     })
 

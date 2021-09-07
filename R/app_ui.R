@@ -88,15 +88,30 @@ app_ui <- function(request) {
                                                           "Unknown" = "unbekannt"),
                                               selected = c("oeffentlich", "privat", "unbekannt"),
                                               multiple = TRUE)
-                         )),
+                                  )
+                           ),
                          fluidRow(
                            column(width = 12,
                                   sliderInput("rangeBeds", "Hospital Beds",
                                               min(qbgbaExtraData::AllHospitals$quantityBeds),
                                               max(qbgbaExtraData::AllHospitals$quantityBeds),
                                               value = range(qbgbaExtraData::AllHospitals$quantityBeds), step = 10,
-                                              dragRange = TRUE))
-                         )),
+                                              dragRange = TRUE)
+                                  )
+                           ),
+                         fluidRow(
+                           column(width = 12,
+                                  selectizeInput("searchHospital", "Search for the name of a specific hospital:",
+                                                 choices = NULL,
+                                                 selected = "",
+                                                 multiple = FALSE,
+                                                 options = list(
+                                                   placeholder = 'Hospital Name'
+                                                   )
+                                                 )
+                                  )
+                         )
+                         ),
                      box(title = "Details", width = 12,
                          tableOutput("details"))
               )
@@ -121,9 +136,17 @@ app_ui <- function(request) {
                      box(
                        title = "Map",
                        width = 12,
-                       # the two buttons used for drilling
-                       actionButton("drill_up", "Drill Up"),
-                       actionButton("drill_down", "Drill Down"),
+                       fluidRow(column(width = 4,
+                                       selectInput("yearDown", "Select the year to display on the map:",
+                                                   choices = all_years_down,
+                                                   selected = all_years_down[[1]])),
+                                column(width = 8,
+                                       # the two buttons used for drilling
+                                       tags$div(style = "margin-top: 1.8em; float: right;",
+                                                actionButton("drill_up", "Drill Up"),
+                                                actionButton("drill_down", "Drill Down"))
+                                       )
+                                ),
                        # the actual map element
                        shinycssloaders::withSpinner(leafletOutput("leafdown", width = "100%",
                                                                   height = "75vh"),
@@ -136,11 +159,7 @@ app_ui <- function(request) {
                        width = 12,
                        fluidRow(
                          column(width = 4,
-                                # a dropdown to select what KPI should be displayed on the map
-                                selectInput("yearDown", "Select the year to display on the map:",
-                                            choices = all_years_down,
-                                            selected = all_years_down[[1]])
-                                ),
+                                h1("hallo")),
                          column(width = 8,
                                 selectInput("map_sel", "Select which KPI should be analyzed:",
                                             c("Number of Doctors" = "DoctorsSum",
