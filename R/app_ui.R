@@ -137,12 +137,12 @@ app_ui <- function(request) {
                        fluidRow(
                          column(width = 4,
                                 # a dropdown to select what KPI should be displayed on the map
-                                selectInput("yearDown", "Select Year:",
+                                selectInput("yearDown", "Select the year to display on the map:",
                                             choices = all_years_down,
                                             selected = all_years_down[[1]])
                                 ),
                          column(width = 8,
-                                selectInput("map_sel", "Select what KPI to display on the map:",
+                                selectInput("map_sel", "Select which KPI should be analyzed:",
                                             c("Number of Doctors" = "DoctorsSum",
                                               "Number of Attending Doctors" = "AttendingDoctorsSum",
                                               "Number of Nurses" = "NursesSum",

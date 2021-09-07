@@ -298,8 +298,6 @@ app_server <- function( input, output, session ) {
         # add the data back to the leafdown object
         my_leafdown$add_data(data)
 
-        data$curr_map_level <- my_leafdown$curr_map_level
-
         data
 
     })
@@ -327,7 +325,7 @@ app_server <- function( input, output, session ) {
 
         data <- data()
 
-        curr_map_level <- unique(data$curr_map_level)
+        curr_map_level <- my_leafdown$curr_map_level
 
         if (curr_map_level == 1) {
 
@@ -346,7 +344,7 @@ app_server <- function( input, output, session ) {
                 mutate(y = DoctorsSum / (male + female) * resident_baseline)
             labels <- create_labels(data, curr_map_level, "Doctors", resident_baseline)
             fillcolor <- leaflet::colorNumeric("Greens", data$y)
-            legend_title <- paste0("Number of Doctors per<br/>", resident_baseline/1000, "Kresidents in ", input$yearDown)
+            legend_title <- paste0("Number of Doctors per<br/>", resident_baseline/1000, "K residents in ", input$yearDown)
 
         } else if (input$map_sel == "AttendingDoctorsSum") {
 
@@ -412,100 +410,138 @@ app_server <- function( input, output, session ) {
         # get the currently selected data from the map
         df <- my_leafdown$curr_sel_data()
 
+        # Get currently selected KPI
+        kpi_name <- paste0("sum_", input$map_sel)
+
+        curr_map_level <- my_leafdown$curr_map_level
+
+        if (curr_map_level == 1) {
+
+            resident_baseline <- 100000
+
+        } else if (curr_map_level == 2) {
+
+            resident_baseline <- 10000
+
+        }
+
+        # depending on the selected KPI in the dropdown we show different data
+        if (input$map_sel == "DoctorsSum") {
+
+            e_legend_title <- paste0("Number of Doctors per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "AttendingDoctorsSum") {
+
+            e_legend_title <- paste0("Number of Attending Doctors per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "NursesSum") {
+
+            e_legend_title <- paste0("Number of Nurses per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "quantityBedsSum") {
+
+            e_legend_title <- paste0("Number of Beds per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "quantityCasesFullSum") {
+
+            e_legend_title <- paste0("Number of Inpatient Cases per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "quantityCasesOutpatientSum") {
+
+            e_legend_title <- paste0("Number of Outpatient Cases per ", resident_baseline/1000, "K residents")
+
+        }
+
+
         # check whether any shape is selected, show general election-result if nothing is selected
         if(dim(df)[1] > 0){
 
             if(my_leafdown$curr_map_level == 1) {
 
-                df <- df[, c("state_abbr", "Democrats2016", "Republicans2016", "Libertarians2016", "Green2016")]
-                df <- df %>% pivot_longer(2:5, "party") %>% group_by(party)
+                plotData <- mapBRDStates_metadata[mapBRDStates_metadata$AGS_1 %in% unique(df$AGS_1), ] %>%
+                    left_join(mapBRDStates_map@data[, c("AGS_1", "GEN_1")], by = "AGS_1") %>%
+                    select(GEN_1, everything()) %>%
+                    mutate(year = factor(year),
+                           GEN_1 = factor(GEN_1),
+                           AGS_1 = factor(AGS_1)) %>%
+                    group_by(year, AGS_1, GEN_1) %>%
+                    summarize(across(contains("male"), sum, .names = "sum_{.col}"),
+                              numberHospitalsSum = sum(numberHospitals),
+                              across(typeRatioPrivat:psychiatricDutyToSupplyRatio, mean, .names = "mean_{.col}"),
+                              across(quantityBedsSum:NursesSum, sum, .names = "sum_{.col}"),
+                              across(weeklyWH_doctors_mean:weeklyWH_nurses_mean, mean, .names = "mean_{.col}"), .groups = "keep")
+
+                plotData <- plotData %>%
+                    select(year, AGS_1, GEN_1, sum_male, sum_female, {{kpi_name}}) %>%
+                    group_by(year, AGS_1) %>%
+                    mutate(residents = sum_male + sum_female) %>%
+                    mutate(year = factor(year))
+
+                plotData <- plotData %>%
+                    mutate(DV = .data[[kpi_name]] / residents * resident_baseline) %>%
+                    group_by(GEN_1)
 
             } else {
 
-                df <- df[, c("County", "Democrats2016", "Republicans2016", "Libertarians2016", "Green2016")]
-                df <- df %>% pivot_longer(2:5, "party") %>% group_by(party)
-                df$value <- df$value
-                names(df)[1] <- "state_abbr"
+                plotData <- mapBRDCounties_metadata[mapBRDCounties_metadata$AGS_2 %in% unique(df$AGS_2), ] %>%
+                    left_join(mapBRDCounties_map@data[, c("AGS_2", "GEN_2")], by = "AGS_2") %>%
+                    select(GEN_2, everything()) %>%
+                    mutate(year = factor(year),
+                           GEN_2 = factor(GEN_2),
+                           AGS_2 = factor(AGS_2)) %>%
+                    group_by(year, AGS_2, GEN_2) %>%
+                    summarize(across(contains("male"), sum, .names = "sum_{.col}"),
+                              numberHospitalsSum = sum(numberHospitals),
+                              across(typeRatioPrivat:psychiatricDutyToSupplyRatio, mean, .names = "mean_{.col}"),
+                              across(quantityBedsSum:NursesSum, sum, .names = "sum_{.col}"),
+                              across(weeklyWH_doctors_mean:weeklyWH_nurses_mean, mean, .names = "mean_{.col}"), .groups = "keep")
+
+                plotData <- plotData %>%
+                    select(year, AGS_2, GEN_2, sum_male, sum_female, {{kpi_name}}) %>%
+                    group_by(year, AGS_2) %>%
+                    mutate(residents = sum_male + sum_female) %>%
+                    mutate(year = factor(year))
+
+                plotData <- plotData %>%
+                    mutate(DV = .data[[kpi_name]] / residents * resident_baseline) %>%
+                    group_by(GEN_2)
 
             }
 
         } else {
 
-            # show general election-result as no state is selected
-            df <- mapBRDStates_metadata %>%
+            plotData <- mapBRDStates_metadata %>%
+                mutate(year = factor(year),
+                       AGS_1 = factor(AGS_1)) %>%
                 group_by(year) %>%
                 summarize(across(contains("male"), sum, .names = "sum_{.col}"),
                           numberHospitalsSum = sum(numberHospitals),
                           across(typeRatioPrivat:psychiatricDutyToSupplyRatio, mean, .names = "mean_{.col}"),
                           across(quantityBedsSum:NursesSum, sum, .names = "sum_{.col}"),
-                          across(weeklyWH_doctors_mean:weeklyWH_nurses_mean, mean, .names = "mean_{.col}"))
+                          across(weeklyWH_doctors_mean:weeklyWH_nurses_mean, mean, .names = "mean_{.col}"), .groups = "keep")
 
-            if (input$map_sel == "DoctorsSum") {
-
-                df <- df %>%
-                    select(year, sum_male, sum_female, sum_DoctorsSum) %>%
-                    group_by(year) %>%
-                    mutate(residents = sum_male + sum_female)
-                df$DV <- df[[4]] / df$residents * resident_baseline
-
-            } else if (input$map_sel == "AttendingDoctorsSum") {
-
-                df <- df %>%
-                    select(year, sum_male, sum_female, sum_AttendingDoctorsSum) %>%
-                    group_by(year) %>%
-                    mutate(residents = sum_male + sum_female)
-                df$DV <- df[[4]] / df$residents * resident_baseline
-
-            } else if (input$map_sel == "NursesSum") {
-
-                df <- df %>%
-                    select(year, sum_male, sum_female, sum_NursesSum) %>%
-                    group_by(year) %>%
-                    mutate(residents = sum_male + sum_female)
-                df$DV <- df[[4]] / df$residents * resident_baseline
-
-            } else if (input$map_sel == "quantityBedsSum") {
-
-                df <- df %>%
-                    select(year, sum_male, sum_female, sum_quantityBedsSum) %>%
-                    group_by(year) %>%
-                    mutate(residents = sum_male + sum_female)
-                df$DV <- df[[4]] / df$residents * resident_baseline
-
-            } else if (input$map_sel == "quantityCasesFullSum") {
-
-                df <- df %>%
-                    select(year, sum_male, sum_female, sum_quantityCasesFullSum) %>%
-                    group_by(year) %>%
-                    mutate(residents = sum_male + sum_female)
-                df$DV <- df[[4]] / df$residents * resident_baseline
-
-            } else if (input$map_sel == "quantityCasesOutpatientSum") {
-
-                df <- df %>%
-                    select(year, sum_male, sum_female, sum_quantityCasesOutpatientSum) %>%
-                    group_by(year) %>%
-                    mutate(residents = sum_male + sum_female)
-                df$DV <- df[[4]] / df$residents * resident_baseline
-
-            }
-
-            #df
+            plotData <- plotData %>%
+                select(year, sum_male, sum_female, {{kpi_name}}) %>%
+                group_by(year) %>%
+                mutate(residents = sum_male + sum_female) %>%
+                mutate(year = factor(year))
+            plotData <- plotData %>%
+                mutate(DV = .data[[kpi_name]] / residents * 100000) %>%
+                mutate(GEN_0 = "BRD") %>%
+                group_by(GEN_0)
 
         }
         # create the graph
-        df %>%
-            e_charts(year, stack = "grp") %>%
+        plotData %>%
+            e_charts(year) %>%
             e_bar(DV) %>%
-            #e_y_axis(formatter = e_axis_formatter("percent", digits = 2)) %>%
-            e_tooltip(trigger = "axis",axisPointer = list(type = "shadow")) %>%
-            e_legend(right = 10,top = 10) %>%
-            e_color(c('#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00')) #%>%
-            #e_tooltip(formatter = e_tooltip_item_formatter("percent", digits = 2))
+            e_tooltip(trigger = "axis", axisPointer = list(type = "shadow")) %>%
+            e_legend(bottom = 0) %>%
+            e_x_axis(axisLabel = list(interval = 0),
+                     axisTick = list(alignWithLabel = TRUE)) %>%
+            e_title(e_legend_title,
+                    left = "center", top = 5)
+
     })
-
-
-
-
 
 }
