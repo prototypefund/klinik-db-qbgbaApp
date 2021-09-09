@@ -47,16 +47,14 @@ app_server <- function( input, output, session ) {
                                                  "Grund- und Regelversorgung",
                                                  "m")))
 
+    AllHospitals <- AllHospitals %>%
+        mutate(identifier = paste0(HospitalName, " (", ikNumber, " - ", locationNumberOverall, ")"))
+
     pal <- colorFactor(
         palette = c('#007bff', '#dc3545', '#28a745'),
         levels = unique(as.character(AllHospitals$type))
         )
 
-
-    updateSelectizeInput(session, 'searchHospital',
-                         choices = unique(AllHospitals$HospitalName),
-                         selected = NULL,
-                         server = TRUE)
 
     filteredData <- reactive({
 
@@ -73,6 +71,30 @@ app_server <- function( input, output, session ) {
         AllHospitals_filtered
 
     })
+
+
+    filteredDataSearch <- reactive({
+
+        OneHospital_filtered <- AllHospitals[AllHospitals$year == input$year &
+                                                 AllHospitals$identifier == input$searchHospital, ]
+
+        validate(
+            need(nrow(OneHospital_filtered) > 0, message = "No Hospital available!")#,
+        )
+
+        OneHospital_filtered
+
+    })
+
+    observe({
+
+        updateSelectizeInput(session, 'searchHospital',
+                             choices = unique(filteredData()$identifier),
+                             selected = "",
+                             server = TRUE)
+
+    })
+
 
     output$map <- renderLeaflet({
 
@@ -176,12 +198,56 @@ app_server <- function( input, output, session ) {
             clearMarkers() %>%
             addMarkers(lng = one_clinic$lon, lat = one_clinic$lat)
 
+    })
 
-        selected <- unname(unlist(data[data$idHospital == p$id, "HospitalName"]))
 
-        updateSelectInput(session, "searchHospital",
-                          selected = selected)
+    observeEvent(input$searchHospital, {
 
+        if (req(input$searchHospital) != "") {
+
+            oneClinic <- filteredDataSearch()
+
+            oneClinic_table <- tibble("NAME" = c("<strong>Hospital Name</strong>",
+                                                 "<strong>IK - Location",
+                                                 "<strong>Address</strong>",
+                                                 "<strong>Website</strong>",
+                                                 "<strong>Number of Beds</strong>",
+                                                 "<strong>Inpatient Cases</strong>",
+                                                 "<strong>Day Care Cases</strong>",
+                                                 "<strong>Outpatient Cases</strong>"),
+
+                                      "VALUE" = c(map_chr(strwrap(oneClinic %>% pull(HospitalName),
+                                                                  width = 42,
+                                                                  simplify = FALSE),
+                                                          paste, collapse = "<br/>"),
+                                                  paste0(oneClinic %>% pull(ikNumber), " - ", oneClinic %>% pull(locationNumberOverall)),
+                                                  paste0(oneClinic %>% pull(street), " ",
+                                                         oneClinic %>% pull(housenumber), "<br/>",
+                                                         oneClinic %>% pull(zip), " ",
+                                                         oneClinic %>% pull(city)),
+                                                  ifelse(oneClinic %>% pull(URL) == "No URL available",
+                                                         oneClinic %>% pull(URL),
+                                                         paste0('<a href="', oneClinic %>% pull(URL), '" target="_blank" rel="noopener noreferrer">',
+                                                                oneClinic %>% pull(URL), '</a>')),
+                                                  format(as.numeric(oneClinic %>% pull(quantityBeds)), big.mark = ".", decimal.mark = ","),
+                                                  format(as.numeric(oneClinic %>% pull(quantityCasesFull)), big.mark = ".", decimal.mark = ","),
+                                                  format(as.numeric(oneClinic %>% pull(quantityCasesPartial)), big.mark = ".", decimal.mark = ","),
+                                                  format(as.numeric(oneClinic %>% pull(quantityCasesOutpatient)), big.mark = ".", decimal.mark = ",")))
+
+            output$details <- renderTable(oneClinic_table,
+                                          colnames = FALSE,
+                                          striped = TRUE,
+                                          spacing = "xs",
+                                          sanitize.text.function = identity)
+
+            leafletProxy("map") %>%
+                clearMarkers() %>%
+                setView(lat = oneClinic$lat,
+                        lng = oneClinic$lon,
+                        zoom = 7) %>%
+                addMarkers(lng = oneClinic$lon, lat = oneClinic$lat)
+
+        }
 
     })
 
@@ -215,7 +281,7 @@ app_server <- function( input, output, session ) {
                     zoom = 6)
 
         updateSelectizeInput(session, "searchHospital",
-                          selected = "")
+                             selected = "")
 
     })
 
@@ -556,7 +622,8 @@ app_server <- function( input, output, session ) {
             e_x_axis(axisLabel = list(interval = 0),
                      axisTick = list(alignWithLabel = TRUE)) %>%
             e_title(e_legend_title,
-                    left = "center", top = 5)
+                    left = "center", top = 5) %>%
+            e_grid(bottom = 100, height = "auto")
 
     })
 

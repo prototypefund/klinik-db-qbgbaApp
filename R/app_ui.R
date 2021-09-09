@@ -139,8 +139,18 @@ app_ui <- function(request) {
                        fluidRow(column(width = 4,
                                        selectInput("yearDown", "Select the year to display on the map:",
                                                    choices = all_years_down,
-                                                   selected = all_years_down[[1]])),
-                                column(width = 8,
+                                                   selected = all_years_down[[1]])
+                                       ),
+                                column(width = 4,
+                                       selectInput("map_sel", "Select KPI to analyze:",
+                                                   c("Number of Doctors" = "DoctorsSum",
+                                                     "Number of Attending Doctors" = "AttendingDoctorsSum",
+                                                     "Number of Nurses" = "NursesSum",
+                                                     "Number of Beds" = "quantityBedsSum",
+                                                     "Number of Inpatient Cases" = "quantityCasesFullSum",
+                                                     "Number of Outpatient Cases" = "quantityCasesOutpatientSum"))
+                                       ),
+                                column(width = 4,
                                        # the two buttons used for drilling
                                        tags$div(style = "margin-top: 1.8em; float: right;",
                                                 actionButton("drill_up", "Drill Up"),
@@ -154,23 +164,6 @@ app_ui <- function(request) {
                                                     color = "#0080b7")
                        )),
               column(width = 6,
-                     box(
-                       title = "Controls",
-                       width = 12,
-                       fluidRow(
-                         column(width = 4,
-                                h1("hallo")),
-                         column(width = 8,
-                                selectInput("map_sel", "Select which KPI should be analyzed:",
-                                            c("Number of Doctors" = "DoctorsSum",
-                                              "Number of Attending Doctors" = "AttendingDoctorsSum",
-                                              "Number of Nurses" = "NursesSum",
-                                              "Number of Beds" = "quantityBedsSum",
-                                              "Number of Inpatient Cases" = "quantityCasesFullSum",
-                                              "Number of Outpatient Cases" = "quantityCasesOutpatientSum"))
-                                )
-                         )
-                       ),
                      fluidRow(
                        box(
                          title = "Results",
