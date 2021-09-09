@@ -88,15 +88,30 @@ app_ui <- function(request) {
                                                           "Unknown" = "unbekannt"),
                                               selected = c("oeffentlich", "privat", "unbekannt"),
                                               multiple = TRUE)
-                         )),
+                                  )
+                           ),
                          fluidRow(
                            column(width = 12,
                                   sliderInput("rangeBeds", "Hospital Beds",
                                               min(qbgbaExtraData::AllHospitals$quantityBeds),
                                               max(qbgbaExtraData::AllHospitals$quantityBeds),
                                               value = range(qbgbaExtraData::AllHospitals$quantityBeds), step = 10,
-                                              dragRange = TRUE))
-                         )),
+                                              dragRange = TRUE)
+                                  )
+                           ),
+                         fluidRow(
+                           column(width = 12,
+                                  selectizeInput("searchHospital", "Search for the name of a specific hospital:",
+                                                 choices = NULL,
+                                                 selected = "",
+                                                 multiple = FALSE,
+                                                 options = list(
+                                                   placeholder = 'Hospital Name'
+                                                   )
+                                                 )
+                                  )
+                         )
+                         ),
                      box(title = "Details", width = 12,
                          tableOutput("details"))
               )
@@ -121,9 +136,27 @@ app_ui <- function(request) {
                      box(
                        title = "Map",
                        width = 12,
-                       # the two buttons used for drilling
-                       actionButton("drill_up", "Drill Up"),
-                       actionButton("drill_down", "Drill Down"),
+                       fluidRow(column(width = 4,
+                                       selectInput("yearDown", "Select the year to display on the map:",
+                                                   choices = all_years_down,
+                                                   selected = all_years_down[[1]])
+                                       ),
+                                column(width = 4,
+                                       selectInput("map_sel", "Select KPI to analyze:",
+                                                   c("Number of Doctors" = "DoctorsSum",
+                                                     "Number of Attending Doctors" = "AttendingDoctorsSum",
+                                                     "Number of Nurses" = "NursesSum",
+                                                     "Number of Beds" = "quantityBedsSum",
+                                                     "Number of Inpatient Cases" = "quantityCasesFullSum",
+                                                     "Number of Outpatient Cases" = "quantityCasesOutpatientSum"))
+                                       ),
+                                column(width = 4,
+                                       # the two buttons used for drilling
+                                       tags$div(style = "margin-top: 1.8em; float: right;",
+                                                actionButton("drill_up", "Drill Up"),
+                                                actionButton("drill_down", "Drill Down"))
+                                       )
+                                ),
                        # the actual map element
                        shinycssloaders::withSpinner(leafletOutput("leafdown", width = "100%",
                                                                   height = "75vh"),
@@ -131,33 +164,14 @@ app_ui <- function(request) {
                                                     color = "#0080b7")
                        )),
               column(width = 6,
-                     box(
-                       title = "Controls",
-                       width = 12,
-                       fluidRow(
-                         column(width = 4,
-                                # a dropdown to select what KPI should be displayed on the map
-                                selectInput("yearDown", "Select Year:",
-                                            choices = all_years_down,
-                                            selected = all_years_down[[1]])
-                                ),
-                         column(width = 8,
-                                selectInput("map_sel", "Select what KPI to display on the map:",
-                                            c("Number of Doctors" = "DoctorsSum",
-                                              "Number of Attending Doctors" = "AttendingDoctorsSum",
-                                              "Number of Nurses" = "NursesSum",
-                                              "Number of Beds" = "quantityBedsSum",
-                                              "Number of Inpatient Cases" = "quantityCasesFullSum",
-                                              "Number of Outpatient Cases" = "quantityCasesOutpatientSum"))
-                                )
-                         )
+                     fluidRow(
+                       box(
+                         title = "Results",
+                         width = 12,
+                         echarts4rOutput("comparison")
                        )
-                     ),
-                     # box(
-                     #   title = "Results",
-                     #   width = 12,
-                     #   echarts4rOutput("comparison")
-                     #   )
+                     )
+                    )
                     )
                   )
                 )

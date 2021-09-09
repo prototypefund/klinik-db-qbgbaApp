@@ -47,8 +47,11 @@ app_server <- function( input, output, session ) {
                                                  "Grund- und Regelversorgung",
                                                  "m")))
 
+    AllHospitals <- AllHospitals %>%
+        mutate(identifier = paste0(HospitalName, " (", ikNumber, " - ", locationNumberOverall, ")"))
+
     pal <- colorFactor(
-        palette = c('blue', 'red', 'green'),
+        palette = c('#007bff', '#dc3545', '#28a745'),
         levels = unique(as.character(AllHospitals$type))
         )
 
@@ -68,6 +71,30 @@ app_server <- function( input, output, session ) {
         AllHospitals_filtered
 
     })
+
+
+    filteredDataSearch <- reactive({
+
+        OneHospital_filtered <- AllHospitals[AllHospitals$year == input$year &
+                                                 AllHospitals$identifier == input$searchHospital, ]
+
+        validate(
+            need(nrow(OneHospital_filtered) > 0, message = "No Hospital available!")#,
+        )
+
+        OneHospital_filtered
+
+    })
+
+    observe({
+
+        updateSelectizeInput(session, 'searchHospital',
+                             choices = unique(filteredData()$identifier),
+                             selected = "",
+                             server = TRUE)
+
+    })
+
 
     output$map <- renderLeaflet({
 
@@ -115,7 +142,9 @@ app_server <- function( input, output, session ) {
 
         p <- input$map_shape_click
 
-        one_clinic <- filteredData() %>%
+        data <- filteredData()
+
+        one_clinic <- data %>%
             filter(idHospital == p$id) %>%
             select(HospitalName,
                    ikNumber,
@@ -169,6 +198,56 @@ app_server <- function( input, output, session ) {
             clearMarkers() %>%
             addMarkers(lng = one_clinic$lon, lat = one_clinic$lat)
 
+    })
+
+
+    observeEvent(input$searchHospital, {
+
+        if (req(input$searchHospital) != "") {
+
+            oneClinic <- filteredDataSearch()
+
+            oneClinic_table <- tibble("NAME" = c("<strong>Hospital Name</strong>",
+                                                 "<strong>IK - Location",
+                                                 "<strong>Address</strong>",
+                                                 "<strong>Website</strong>",
+                                                 "<strong>Number of Beds</strong>",
+                                                 "<strong>Inpatient Cases</strong>",
+                                                 "<strong>Day Care Cases</strong>",
+                                                 "<strong>Outpatient Cases</strong>"),
+
+                                      "VALUE" = c(map_chr(strwrap(oneClinic %>% pull(HospitalName),
+                                                                  width = 42,
+                                                                  simplify = FALSE),
+                                                          paste, collapse = "<br/>"),
+                                                  paste0(oneClinic %>% pull(ikNumber), " - ", oneClinic %>% pull(locationNumberOverall)),
+                                                  paste0(oneClinic %>% pull(street), " ",
+                                                         oneClinic %>% pull(housenumber), "<br/>",
+                                                         oneClinic %>% pull(zip), " ",
+                                                         oneClinic %>% pull(city)),
+                                                  ifelse(oneClinic %>% pull(URL) == "No URL available",
+                                                         oneClinic %>% pull(URL),
+                                                         paste0('<a href="', oneClinic %>% pull(URL), '" target="_blank" rel="noopener noreferrer">',
+                                                                oneClinic %>% pull(URL), '</a>')),
+                                                  format(as.numeric(oneClinic %>% pull(quantityBeds)), big.mark = ".", decimal.mark = ","),
+                                                  format(as.numeric(oneClinic %>% pull(quantityCasesFull)), big.mark = ".", decimal.mark = ","),
+                                                  format(as.numeric(oneClinic %>% pull(quantityCasesPartial)), big.mark = ".", decimal.mark = ","),
+                                                  format(as.numeric(oneClinic %>% pull(quantityCasesOutpatient)), big.mark = ".", decimal.mark = ",")))
+
+            output$details <- renderTable(oneClinic_table,
+                                          colnames = FALSE,
+                                          striped = TRUE,
+                                          spacing = "xs",
+                                          sanitize.text.function = identity)
+
+            leafletProxy("map") %>%
+                clearMarkers() %>%
+                setView(lat = oneClinic$lat,
+                        lng = oneClinic$lon,
+                        zoom = 7) %>%
+                addMarkers(lng = oneClinic$lon, lat = oneClinic$lat)
+
+        }
 
     })
 
@@ -200,6 +279,9 @@ app_server <- function( input, output, session ) {
             setView(lat = 51.16344546735013,
                     lng = 10.447737773401668,
                     zoom = 6)
+
+        updateSelectizeInput(session, "searchHospital",
+                             selected = "")
 
     })
 
@@ -298,8 +380,6 @@ app_server <- function( input, output, session ) {
         # add the data back to the leafdown object
         my_leafdown$add_data(data)
 
-        data$curr_map_level <- my_leafdown$curr_map_level
-
         data
 
     })
@@ -327,7 +407,7 @@ app_server <- function( input, output, session ) {
 
         data <- data()
 
-        curr_map_level <- unique(data$curr_map_level)
+        curr_map_level <- my_leafdown$curr_map_level
 
         if (curr_map_level == 1) {
 
@@ -346,7 +426,7 @@ app_server <- function( input, output, session ) {
                 mutate(y = DoctorsSum / (male + female) * resident_baseline)
             labels <- create_labels(data, curr_map_level, "Doctors", resident_baseline)
             fillcolor <- leaflet::colorNumeric("Greens", data$y)
-            legend_title <- paste0("Number of Doctors per<br/>", resident_baseline/1000, "Kresidents in ", input$yearDown)
+            legend_title <- paste0("Number of Doctors per<br/>", resident_baseline/1000, "K residents in ", input$yearDown)
 
         } else if (input$map_sel == "AttendingDoctorsSum") {
 
@@ -407,42 +487,144 @@ app_server <- function( input, output, session ) {
                       position = "bottomleft")
     })
 
-    # output$comparison <- renderEcharts4r({
-    #
-    #     # get the currently selected data from the map
-    #     df <- my_leafdown$curr_sel_data()
-    #
-    #     # check whether any shape is selected, show general election-result if nothing is selected
-    #     if(dim(df)[1] > 0){
-    #         if(my_leafdown$curr_map_level == 1) {
-    #             df <- df[, c("state_abbr", "Democrats2016", "Republicans2016", "Libertarians2016", "Green2016")]
-    #             df <- df %>% pivot_longer(2:5, "party") %>% group_by(party)
-    #         } else {
-    #             df <- df[, c("County", "Democrats2016", "Republicans2016", "Libertarians2016", "Green2016")]
-    #             df <- df %>% pivot_longer(2:5, "party") %>% group_by(party)
-    #             df$value <- df$value
-    #             names(df)[1] <- "state_abbr"
-    #         }
-    #     } else {
-    #         # show general election-result as no state is selected
-    #         df <- data.frame(
-    #             party = c("Democrats2016", "Republicans2016", "Libertarians2016", "Green2016"),
-    #             state_abbr = "USA",
-    #             value = c(0.153, 0.634, 0.134, 0.059)) %>% group_by(party)
-    #     }
-    #     # create the graph
-    #     df %>%
-    #         e_charts(state_abbr, stack="grp") %>%
-    #         e_bar(value) %>%
-    #         e_y_axis(formatter = e_axis_formatter("percent", digits = 2)) %>%
-    #         e_tooltip(trigger = "axis",axisPointer = list(type = "shadow")) %>%
-    #         e_legend(right = 10,top = 10) %>%
-    #         e_color(c("#232066", "#E91D0E", "#f3b300", "#006900"))%>%
-    #         e_tooltip(formatter = e_tooltip_item_formatter("percent", digits = 2))
-    # })
+    output$comparison <- renderEcharts4r({
+
+        # get the currently selected data from the map
+        df <- my_leafdown$curr_sel_data()
+
+        # Get currently selected KPI
+        kpi_name <- paste0("sum_", input$map_sel)
+
+        curr_map_level <- my_leafdown$curr_map_level
+
+        if (curr_map_level == 1) {
+
+            resident_baseline <- 100000
+
+        } else if (curr_map_level == 2) {
+
+            resident_baseline <- 10000
+
+        }
+
+        # depending on the selected KPI in the dropdown we show different data
+        if (input$map_sel == "DoctorsSum") {
+
+            e_legend_title <- paste0("Number of Doctors per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "AttendingDoctorsSum") {
+
+            e_legend_title <- paste0("Number of Attending Doctors per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "NursesSum") {
+
+            e_legend_title <- paste0("Number of Nurses per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "quantityBedsSum") {
+
+            e_legend_title <- paste0("Number of Beds per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "quantityCasesFullSum") {
+
+            e_legend_title <- paste0("Number of Inpatient Cases per ", resident_baseline/1000, "K residents")
+
+        } else if (input$map_sel == "quantityCasesOutpatientSum") {
+
+            e_legend_title <- paste0("Number of Outpatient Cases per ", resident_baseline/1000, "K residents")
+
+        }
 
 
+        # check whether any shape is selected, show general election-result if nothing is selected
+        if(dim(df)[1] > 0){
 
+            if(my_leafdown$curr_map_level == 1) {
 
+                plotData <- mapBRDStates_metadata[mapBRDStates_metadata$AGS_1 %in% unique(df$AGS_1), ] %>%
+                    left_join(mapBRDStates_map@data[, c("AGS_1", "GEN_1")], by = "AGS_1") %>%
+                    select(GEN_1, everything()) %>%
+                    mutate(year = factor(year),
+                           GEN_1 = factor(GEN_1),
+                           AGS_1 = factor(AGS_1)) %>%
+                    group_by(year, AGS_1, GEN_1) %>%
+                    summarize(across(contains("male"), sum, .names = "sum_{.col}"),
+                              numberHospitalsSum = sum(numberHospitals),
+                              across(typeRatioPrivat:psychiatricDutyToSupplyRatio, mean, .names = "mean_{.col}"),
+                              across(quantityBedsSum:NursesSum, sum, .names = "sum_{.col}"),
+                              across(weeklyWH_doctors_mean:weeklyWH_nurses_mean, mean, .names = "mean_{.col}"), .groups = "keep")
+
+                plotData <- plotData %>%
+                    select(year, AGS_1, GEN_1, sum_male, sum_female, {{kpi_name}}) %>%
+                    group_by(year, AGS_1) %>%
+                    mutate(residents = sum_male + sum_female) %>%
+                    mutate(year = factor(year))
+
+                plotData <- plotData %>%
+                    mutate(DV = .data[[kpi_name]] / residents * resident_baseline) %>%
+                    group_by(GEN_1)
+
+            } else {
+
+                plotData <- mapBRDCounties_metadata[mapBRDCounties_metadata$AGS_2 %in% unique(df$AGS_2), ] %>%
+                    left_join(mapBRDCounties_map@data[, c("AGS_2", "GEN_2")], by = "AGS_2") %>%
+                    select(GEN_2, everything()) %>%
+                    mutate(year = factor(year),
+                           GEN_2 = factor(GEN_2),
+                           AGS_2 = factor(AGS_2)) %>%
+                    group_by(year, AGS_2, GEN_2) %>%
+                    summarize(across(contains("male"), sum, .names = "sum_{.col}"),
+                              numberHospitalsSum = sum(numberHospitals),
+                              across(typeRatioPrivat:psychiatricDutyToSupplyRatio, mean, .names = "mean_{.col}"),
+                              across(quantityBedsSum:NursesSum, sum, .names = "sum_{.col}"),
+                              across(weeklyWH_doctors_mean:weeklyWH_nurses_mean, mean, .names = "mean_{.col}"), .groups = "keep")
+
+                plotData <- plotData %>%
+                    select(year, AGS_2, GEN_2, sum_male, sum_female, {{kpi_name}}) %>%
+                    group_by(year, AGS_2) %>%
+                    mutate(residents = sum_male + sum_female) %>%
+                    mutate(year = factor(year))
+
+                plotData <- plotData %>%
+                    mutate(DV = .data[[kpi_name]] / residents * resident_baseline) %>%
+                    group_by(GEN_2)
+
+            }
+
+        } else {
+
+            plotData <- mapBRDStates_metadata %>%
+                mutate(year = factor(year),
+                       AGS_1 = factor(AGS_1)) %>%
+                group_by(year) %>%
+                summarize(across(contains("male"), sum, .names = "sum_{.col}"),
+                          numberHospitalsSum = sum(numberHospitals),
+                          across(typeRatioPrivat:psychiatricDutyToSupplyRatio, mean, .names = "mean_{.col}"),
+                          across(quantityBedsSum:NursesSum, sum, .names = "sum_{.col}"),
+                          across(weeklyWH_doctors_mean:weeklyWH_nurses_mean, mean, .names = "mean_{.col}"), .groups = "keep")
+
+            plotData <- plotData %>%
+                select(year, sum_male, sum_female, {{kpi_name}}) %>%
+                group_by(year) %>%
+                mutate(residents = sum_male + sum_female) %>%
+                mutate(year = factor(year))
+            plotData <- plotData %>%
+                mutate(DV = .data[[kpi_name]] / residents * 100000) %>%
+                mutate(GEN_0 = "BRD") %>%
+                group_by(GEN_0)
+
+        }
+        # create the graph
+        plotData %>%
+            e_charts(year) %>%
+            e_bar(DV) %>%
+            e_tooltip(trigger = "axis", axisPointer = list(type = "shadow")) %>%
+            e_legend(bottom = 0) %>%
+            e_x_axis(axisLabel = list(interval = 0),
+                     axisTick = list(alignWithLabel = TRUE)) %>%
+            e_title(e_legend_title,
+                    left = "center", top = 5) %>%
+            e_grid(bottom = 100, height = "auto")
+
+    })
 
 }

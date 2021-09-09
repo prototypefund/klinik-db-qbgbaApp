@@ -29,6 +29,7 @@
 #' @importFrom dplyr rename
 #' @importFrom dplyr if_else
 #' @importFrom dplyr pull
+#' @importFrom dplyr summarize
 #' @importFrom tidyr nest
 #' @importFrom tidyr unnest
 #' @importFrom tidyr fill
