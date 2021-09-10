@@ -166,18 +166,26 @@ app_ui <- function(request) {
               column(width = 6,
                      fluidRow(
                        box(
-                         title = "Results",
+                         title = "KPIs - Comparison Over Time",
                          width = 12,
                          echarts4rOutput("comparison")
                        )
+                     ),
+                     tags$br(),
+                     fluidRow(
+                       box(
+                         title = "Test",
+                         width = 12,
+                         h1("!")
+                       )
                      )
                     )
-                    )
-                  )
-                )
               )
             )
           )
+        )
+    )
+    )
 }
 
 #' Add external Resources to the Application

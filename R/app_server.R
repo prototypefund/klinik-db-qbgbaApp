@@ -623,7 +623,7 @@ app_server <- function( input, output, session ) {
                      axisTick = list(alignWithLabel = TRUE)) %>%
             e_title(e_legend_title,
                     left = "center", top = 5) %>%
-            e_grid(bottom = 100, height = "auto")
+            e_grid(bottom = 120, height = "auto")
 
     })
 
